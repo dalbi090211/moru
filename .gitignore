@@ -1,3 +1,63 @@
+# ── 가중치 / 체크포인트 ──
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.onnx
+*.bin
+checkpoints/
+runs/
+wandb/
+lightning_logs/
+
+# ── 데이터셋 ──
+data/
+datasets/
+*.npy
+*.npz
+
+# ── 사용자 아티팩트 ──
+projects/
+*.db
+*.sqlite3
+
+# ── 시크릿 ──
+.env
+.env.*
+!.env.example
+
+# ── Python ──
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# ── Node ──
+node_modules/
+dist/
+dist-ssr/
+build/
+.vite/
+*.tsbuildinfo
+
+# ── Rust / Tauri ──
+target/
+src-tauri/target/
+src-tauri/gen/
+
+# ── 에디터 / OS ──
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# ── 예제 그래프는 커밋 ──
+!examples/*.graph.json
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
