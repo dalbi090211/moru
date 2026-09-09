@@ -1,0 +1,18 @@
+{
+  "nodes": [
+    { "id": "input", "type": "input", "shape": [1, 28, 28] },
+    { "id": "conv1", "type": "conv2d", "out_channels": 16, "kernel_size": 3, "padding": 1 },
+    { "id": "relu1", "type": "relu" },
+    { "id": "pool1", "type": "maxpool2d", "kernel_size": 2 },
+    { "id": "flatten", "type": "flatten" },
+    { "id": "fc1", "type": "linear", "out_features": 10 }
+  ],
+  "edges": [
+    { "src": "input", "dst": "conv1" },
+    { "src": "conv1", "dst": "relu1" },
+    { "src": "relu1", "dst": "pool1" },
+    { "src": "pool1", "dst": "flatten" },
+    { "src": "flatten", "dst": "fc1" }
+  ],
+  "train": { "dataset": "mnist", "epochs": 1, "batch_size": 64, "lr": 0.001 }
+}
