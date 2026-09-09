@@ -1,0 +1,16 @@
+{
+  "nodes": [
+    { "id": "input", "type": "input", "shape": [1, 28, 28] },
+    { "id": "flatten", "type": "flatten" },
+    { "id": "fc1", "type": "linear", "out_features": 128 },
+    { "id": "relu1", "type": "relu" },
+    { "id": "fc2", "type": "linear", "out_features": 10 }
+  ],
+  "edges": [
+    { "src": "input", "dst": "flatten" },
+    { "src": "flatten", "dst": "fc1" },
+    { "src": "fc1", "dst": "relu1" },
+    { "src": "relu1", "dst": "fc2" }
+  ],
+  "train": { "dataset": "mnist", "epochs": 1, "batch_size": 64, "lr": 0.001 }
+}
