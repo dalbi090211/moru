@@ -16,12 +16,12 @@ class NodeBase(BaseModel):
 
 
 class InputNode(NodeBase):
-    type: Literal["input"] = "input"
+    type: Literal["input"]
     shape: list[int]  # 배치 차원 제외. MNIST = [1, 28, 28]
 
 
 class Conv2dNode(NodeBase):
-    type: Literal["conv2d"] = "conv2d"
+    type: Literal["conv2d"]
     out_channels: int = Field(gt=0)
     kernel_size: int = Field(default=3, gt=0)
     stride: int = Field(default=1, gt=0)
@@ -29,22 +29,22 @@ class Conv2dNode(NodeBase):
 
 
 class LinearNode(NodeBase):
-    type: Literal["linear"] = "linear"
+    type: Literal["linear"]
     out_features: int = Field(gt=0)
 
 
 class ReLUNode(NodeBase):
-    type: Literal["relu"] = "relu"
+    type: Literal["relu"]
 
 
 class MaxPool2dNode(NodeBase):
-    type: Literal["maxpool2d"] = "maxpool2d"
+    type: Literal["maxpool2d"]
     kernel_size: int = Field(default=2, gt=0)
     stride: int | None = None  # None이면 kernel_size와 동일 (PyTorch 규칙)
 
 
 class FlattenNode(NodeBase):
-    type: Literal["flatten"] = "flatten"
+    type: Literal["flatten"]
 
 
 Node = Annotated[

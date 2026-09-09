@@ -243,3 +243,5 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+# gen:types 중간 산출물 (types.gen.ts만 커밋)
+frontend/.graph.schema.json
