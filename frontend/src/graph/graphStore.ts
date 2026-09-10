@@ -2,7 +2,8 @@ import { immer } from "zustand/middleware/immer";
 import { temporal } from "zundo";
 import { create } from "zustand";
 import { shallow } from "zustand/shallow";
-import { applyCommand, type Command, type GraphState } from "./commands.ts";
+import { applyCommand, CommandError, newNode, type Command, type GraphState } from "./commands.ts";
+import type { NodeKind } from "../nodes/specs.ts";
 import type { Graph } from "../types.gen.ts";
 import { autoLayout } from "./layout.ts";
 
@@ -15,20 +16,35 @@ import { autoLayout } from "./layout.ts";
 type GraphStore = GraphState & {
   /** UI에 편집기가 아직 없는 학습 설정. 파일에서 온 값을 저장할 때 그대로 돌려준다. */
   train: Graph["train"];
+  /** 마지막 command가 거부된 이유. 파생값이라 히스토리에는 안 들어간다. */
+  error: string | null;
   /** 편집하는 유일한 경로. 여러 개를 넘기면 undo 한 번에 통째로 되돌아간다. */
   apply: (...cmds: Command[]) => void;
+  /** UI용 apply. 거부되면 던지는 대신 error에 담는다. */
+  run: (...cmds: Command[]) => boolean;
 };
 
 export const useGraphStore = create<GraphStore>()(
   temporal(
-    immer((set) => ({
+    immer((set, get) => ({
       nodes: [],
       edges: [],
       train: undefined,
+      error: null,
       apply: (...cmds) =>
         set((draft) => {
           for (const cmd of cmds) applyCommand(draft, cmd);
         }),
+      run: (...cmds) => {
+        try {
+          get().apply(...cmds);
+          if (get().error !== null) set({ error: null });
+          return true;
+        } catch (e) {
+          set({ error: e instanceof CommandError ? e.message : String(e) });
+          return false;
+        }
+      },
     })),
     {
       // 파생값(shape 등)은 히스토리에 넣지 않는다. 지금은 nodes/edges가 전부다.
@@ -61,6 +77,15 @@ export function loadGraph(g: Graph): void {
   );
   useGraphStore.setState({ train: g.train });
 }
+
+/** 새 노드를 그 자리에 놓는다. 라이브러리 패널과 우클릭 메뉴가 같은 경로를 탄다. */
+export const addNodeAt = (kind: NodeKind, ui: { x: number; y: number }) => {
+  const g = useGraphStore.getState();
+  return g.run({ op: "add_node", node: newNode(g, kind, ui) });
+};
+
+/** 명령이 아닌 곳(파일 로드 등)에서 난 오류도 같은 자리에 띄운다. */
+export const setError = (error: string | null) => useGraphStore.setState({ error });
 
 /** 저장용 스냅샷. 그래프 JSON이 이 프로젝트의 실제 소스코드다. */
 export const toGraph = (): Graph => {

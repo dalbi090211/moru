@@ -2,7 +2,8 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { produce } from "immer";
-import { applyCommand, CommandError, type Command, type GraphState } from "./commands.ts";
+import { applyCommand, CommandError, newNode, type Command, type GraphState } from "./commands.ts";
+import { NODE_SPECS, parseParam, type ParamSpec } from "../nodes/specs.ts";
 import { loadGraph, toGraph, useGraphStore } from "./graphStore.ts";
 import { syncRFNodes } from "./rf.ts";
 import { autoLayout } from "./layout.ts";
@@ -174,5 +175,36 @@ const data = synced.data as { params: object; shape?: number[] };
 assert.deepEqual(data.params, { shape: [1, 28, 28] }, "파라미터만 감싼다 (ui/id/type 제외)");
 assert.deepEqual(data.shape, [1, 28, 28], "추론한 출력 shape도 같이 실린다");
 assert.deepEqual(syncRFNodes(live, empty), [], "스토어에서 사라진 노드는 캔버스에서도 사라진다");
+
+// ── 새 노드: spec 기본값 + 안 겹치는 id ──
+const fresh = newNode(empty, "conv2d", { x: 1, y: 2 });
+assert.deepEqual(fresh, {
+  id: "conv2d1",
+  type: "conv2d",
+  ui: { x: 1, y: 2 },
+  out_channels: 16,
+  kernel_size: 3,
+  stride: 1,
+  padding: 0,
+});
+const withConv = run(empty, { op: "add_node", node: fresh });
+assert.equal(newNode(withConv, "conv2d", { x: 0, y: 0 }).id, "conv2d2", "id가 겹치면 안 된다");
+// spec에 있는 모든 노드가 add_node를 통과해야 한다 (라이브러리 목록이 spec에서 나오므로)
+for (const kind of Object.keys(NODE_SPECS))
+  run(empty, { op: "add_node", node: newNode(empty, kind as "relu", { x: 0, y: 0 }) });
+
+// ── Inspector 입력 파싱 ──
+const int = { kind: "int", label: "out_features", default: 128, min: 1 } as const;
+const stride = { kind: "int", label: "stride", default: null, min: 1 } as const;
+const shapeSpec: ParamSpec = { kind: "shape", label: "shape", default: [1, 28, 28] };
+assert.equal(parseParam(int, " 64 "), 64);
+assert.equal(parseParam(int, "0"), undefined, "min 아래는 버린다");
+assert.equal(parseParam(int, "1.5"), undefined, "정수만");
+assert.equal(parseParam(int, "abc"), undefined);
+assert.equal(parseParam(int, ""), undefined, "필수 파라미터는 비울 수 없다");
+assert.equal(parseParam(stride, ""), null, "기본값 있는 건 비우면 null (= kernel_size)");
+assert.deepEqual(parseParam(shapeSpec, "3, 32,32"), [3, 32, 32]);
+assert.equal(parseParam(shapeSpec, "3, 0"), undefined, "0 차원은 없다");
+assert.equal(parseParam(shapeSpec, ""), undefined);
 
 console.log("commands.check.ts OK");

@@ -105,3 +105,19 @@ export function defaultParams(kind: NodeKind): NodeData["params"] {
     Object.entries(NODE_SPECS[kind].params).map(([key, spec]) => [key, spec.default]),
   );
 }
+
+/** 입력창 문자열 -> 파라미터 값. 못 읽으면 undefined (편집을 버린다). */
+export function parseParam(spec: ParamSpec, raw: string): unknown {
+  const text = raw.trim();
+  if (spec.kind === "shape") {
+    const dims = text.split(",").map((d) => Number(d.trim()));
+    return dims.length > 0 && dims.every((d) => Number.isInteger(d) && d > 0) ? dims : undefined;
+  }
+  // 비우면 기본값에 맡긴다 (maxpool stride = kernel_size)
+  if (text === "") return spec.default === null ? null : undefined;
+  const n = Number(text);
+  return Number.isInteger(n) && n >= (spec.min ?? -Infinity) ? n : undefined;
+}
+
+export const formatParam = (value: unknown) =>
+  Array.isArray(value) ? value.join(", ") : value === null || value === undefined ? "" : String(value);

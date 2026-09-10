@@ -1,5 +1,6 @@
 import type { Edge, Graph } from "../types.gen.ts";
-import { NODE_SPECS, type NodeKind } from "../nodes/specs.ts";
+import { NODE_SPECS, defaultParams, type NodeKind } from "../nodes/specs.ts";
+import type { NodeUI } from "../types.gen.ts";
 
 /**
  * 그래프 편집은 예외 없이 여기를 거친다.
@@ -23,6 +24,17 @@ export type Command =
   | { op: "delete"; ids: NodeId[] };
 
 export class CommandError extends Error {}
+
+/**
+ * spec 기본값으로 새 노드 하나. id는 안 겹치는 걸로 고른다.
+ * add_node에 태울 payload를 만들 뿐, 스토어를 건드리지 않는다.
+ */
+export function newNode(g: GraphState, kind: NodeKind, ui: NodeUI): GraphNode {
+  let i = 1;
+  while (g.nodes.some((n) => n.id === `${kind}${i}`)) i++;
+  // spec 기본값 = pydantic 기본값. 캐스팅은 여기 한 곳뿐이다.
+  return { id: `${kind}${i}`, type: kind, ui, ...defaultParams(kind) } as GraphNode;
+}
 
 const find = (g: GraphState, id: NodeId): GraphNode => {
   const n = g.nodes.find((n) => n.id === id);

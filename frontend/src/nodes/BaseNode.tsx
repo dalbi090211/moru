@@ -8,7 +8,7 @@ export default function BaseNode({ type, data, selected }: NodeProps) {
 
   return (
     <div
-      className={`min-w-40 rounded-md border bg-zinc-900 text-zinc-100 shadow-lg ${
+      className={`w-52 rounded-md border bg-zinc-900 text-zinc-100 shadow-lg ${
         error ? "border-red-500" : selected ? "border-amber-400" : "border-zinc-700"
       }`}
     >
@@ -30,7 +30,7 @@ export default function BaseNode({ type, data, selected }: NodeProps) {
       {/* 추론된 출력 shape. 핀 타입 시스템의 눈에 보이는 절반이다. */}
       <div className="border-t border-zinc-800 px-3 py-1 font-mono text-[10px]" title={error}>
         {error ? (
-          <span className="line-clamp-2 text-red-400">{error}</span>
+          <span className="line-clamp-3 text-red-400">{error}</span>
         ) : (
           <span className="text-zinc-500">{shape ? `[${shape.join(", ")}]` : "?"}</span>
         )}
