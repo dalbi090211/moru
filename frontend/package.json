@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "check": "node --experimental-strip-types src/graph/commands.check.ts",
+    "check": "node --experimental-strip-types src/graph/commands.check.ts && node --experimental-strip-types src/graph/shapes.check.ts",
     "preview": "vite preview",
     "gen:types": "uv run --project ../backend python ../backend/gen_schema.py && json2ts -i .graph.schema.json -o src/types.gen.ts --no-additionalProperties"
   },

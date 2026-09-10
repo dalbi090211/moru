@@ -44,13 +44,22 @@ function reaches(g: GraphState, from: NodeId, to: NodeId): boolean {
   return false;
 }
 
-function connect(g: GraphState, src: NodeId, dst: NodeId): void {
-  find(g, src);
-  find(g, dst);
-  if (src === dst) throw new CommandError(`'${src}'를 자기 자신에 연결할 수 없다.`);
+/**
+ * connect가 거부되는 이유. 없으면 null.
+ * isValidConnection이 같은 규칙을 써야 해서 밖으로 뺐다 (shapes.ts의 connectionError).
+ */
+export function connectError(g: GraphState, src: NodeId, dst: NodeId): string | null {
+  for (const id of [src, dst]) if (!g.nodes.some((n) => n.id === id)) return `없는 노드: '${id}'`;
+  if (src === dst) return `'${src}'를 자기 자신에 연결할 수 없다.`;
   if (g.edges.some((e) => e.dst === dst))
-    throw new CommandError(`'${dst}'에는 이미 입력이 있다. 다입력 노드는 아직 없다.`);
-  if (reaches(g, dst, src)) throw new CommandError(`'${src}' -> '${dst}'는 사이클을 만든다.`);
+    return `'${dst}'에는 이미 입력이 있다. 다입력 노드는 아직 없다.`;
+  if (reaches(g, dst, src)) return `'${src}' -> '${dst}'는 사이클을 만든다.`;
+  return null;
+}
+
+function connect(g: GraphState, src: NodeId, dst: NodeId): void {
+  const err = connectError(g, src, dst);
+  if (err) throw new CommandError(err);
   g.edges.push({ src, dst });
 }
 

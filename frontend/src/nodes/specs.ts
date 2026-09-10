@@ -92,7 +92,12 @@ export const NODE_SPECS = {
 
 export type NodeKind = keyof typeof NODE_SPECS;
 
-export type NodeData = { params: Record<string, unknown> };
+export type NodeData = {
+  params: Record<string, unknown>;
+  /** 추론 결과. 상류가 덜 연결됐으면 없다. */
+  shape?: number[];
+  error?: string;
+};
 
 /** spec의 기본값으로 파라미터 한 벌을 만든다. */
 export function defaultParams(kind: NodeKind): NodeData["params"] {

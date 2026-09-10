@@ -14,6 +14,7 @@ import { NODE_SPECS } from "./nodes/specs";
 import { CommandError, type Command } from "./graph/commands";
 import { graphTemporal, loadGraph, toGraph, useGraphStore } from "./graph/graphStore";
 import { syncRFNodes, toRFEdge } from "./graph/rf";
+import { connectionError } from "./graph/shapes";
 
 // spec 하나당 컴포넌트 하나를 손으로 등록하지 않는다. 전부 BaseNode로 보낸다.
 const nodeTypes = Object.fromEntries(Object.keys(NODE_SPECS).map((k) => [k, BaseNode]));
@@ -27,7 +28,10 @@ export default function App() {
   // 선택, 실측 크기, 드래그 중 위치처럼 RF가 프레임 단위로 만지는 것들뿐이다.
   const [rfNodes, setRfNodes, onNodesChange] = useNodesState<RFNode>([]);
   const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState<RFEdge>([]);
-  useEffect(() => setRfNodes((prev) => syncRFNodes(prev, nodes)), [nodes, setRfNodes]);
+  useEffect(
+    () => setRfNodes((prev) => syncRFNodes(prev, { nodes, edges })),
+    [nodes, edges, setRfNodes],
+  );
   useEffect(() => setRfEdges(edges.map(toRFEdge)), [edges, setRfEdges]);
 
   const [error, setError] = useState("");
@@ -125,6 +129,8 @@ export default function App() {
         onEdgesChange={onEdgesChange}
         onNodeDragStop={onNodeDragStop}
         onConnect={(c: Connection) => run({ op: "connect", src: c.source, dst: c.target })}
+        // 핀을 끌고 있는 동안 실시간 거부. command와 같은 규칙 + shape.
+        isValidConnection={(c) => connectionError({ nodes, edges }, c.source, c.target) === null}
         onDelete={onDelete}
         nodeTypes={nodeTypes}
         fitView

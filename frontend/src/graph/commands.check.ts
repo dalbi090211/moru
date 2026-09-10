@@ -118,12 +118,14 @@ assert.equal(useGraphStore.getState().nodes.length, before);
 // 안 물려주면 RF가 노드를 visibility:hidden으로 그리고 다시 잰다 = 드래그 중 깜빡임.
 const IN2 = node("in", "input", { shape: [1, 28, 28], ui: { x: 5, y: 6 } });
 const measured = { width: 160, height: 44 };
-const live = syncRFNodes([], [IN]).map((n) => ({ ...n, measured, selected: true }));
-const [synced] = syncRFNodes(live, [IN2]);
+const live = syncRFNodes([], { nodes: [IN], edges: [] }).map((n) => ({ ...n, measured, selected: true }));
+const [synced] = syncRFNodes(live, { nodes: [IN2], edges: [] });
 assert.deepEqual(synced.measured, measured, "실측값을 잃으면 노드가 숨는다");
 assert.equal(synced.selected, true, "선택 상태도 캔버스 쪽 것이다");
 assert.deepEqual(synced.position, { x: 5, y: 6 }, "위치는 스토어가 이긴다");
-assert.deepEqual(synced.data, { params: { shape: [1, 28, 28] } }, "파라미터만 감싼다 (ui/id/type 제외)");
-assert.deepEqual(syncRFNodes(live, []), [], "스토어에서 사라진 노드는 캔버스에서도 사라진다");
+const data = synced.data as { params: object; shape?: number[] };
+assert.deepEqual(data.params, { shape: [1, 28, 28] }, "파라미터만 감싼다 (ui/id/type 제외)");
+assert.deepEqual(data.shape, [1, 28, 28], "추론한 출력 shape도 같이 실린다");
+assert.deepEqual(syncRFNodes(live, empty), [], "스토어에서 사라진 노드는 캔버스에서도 사라진다");
 
 console.log("commands.check.ts OK");

@@ -270,4 +270,26 @@ if __name__ == "__main__":
         {"id": "fc", "type": "linear", "out_features": 10},
     ))
 
+
+    # examples/shape_cases.json — frontend/src/graph/shapes.ts와 공유하는 대조표.
+    # shape 공식은 클라이언트에도 있다(즉각 피드백). 한쪽만 고치면 캔버스에서는
+    # 연결되는데 학습이 터지므로, 같은 파일을 양쪽 테스트가 함께 돌린다.
+    import json
+    from pathlib import Path
+
+    fixture = Path(__file__).resolve().parent.parent / "examples" / "shape_cases.json"
+    cases = json.loads(fixture.read_text(encoding="utf-8"))["cases"]
+    assert len(cases) > 5, "대조표가 비었나?"
+    for case in cases:
+        g = chain(*case["chain"])
+        if "error" in case:
+            rejects(f"'{case['error']}'", g)
+            continue
+        model, shapes = compile_graph(g)
+        for nid, want in case["shapes"].items():
+            assert shapes[nid] == tuple(want), (case["name"], nid, shapes[nid], want)
+        # 공식끼리 맞추는 데서 끝내지 않고 실제 PyTorch 출력과도 맞춰본다
+        out = model(torch.zeros(2, *shapes[g.nodes[0].id]))
+        assert tuple(out.shape[1:]) == shapes[model.output_id], (case["name"], out.shape)
+    print(f"shape_cases.json {len(cases)}건 대조 OK")
     print("compile.py self-check OK")

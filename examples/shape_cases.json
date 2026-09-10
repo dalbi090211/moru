@@ -1,0 +1,102 @@
+{
+  "note": [
+    "shape 추론 대조표. backend/compile.py(_build/_conv_hw)와",
+    "frontend/src/graph/shapes.ts가 같은 공식을 쓰는지 양쪽에서 이 파일로 검증한다.",
+    "한쪽만 고치면 그쪽 테스트가 깨진다. 캔버스에서 연결됐는데 학습이 실패하는 사고를 막는 장치다.",
+    "chain은 순서대로 이어붙인 노드 목록. shapes는 노드별 출력 shape(배치 차원 제외).",
+    "error는 추론이 거부돼야 하는 노드 id."
+  ],
+  "cases": [
+    {
+      "name": "MLP",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [1, 28, 28] },
+        { "id": "fl", "type": "flatten" },
+        { "id": "fc", "type": "linear", "out_features": 10 }
+      ],
+      "shapes": { "in": [1, 28, 28], "fl": [784], "fc": [10] }
+    },
+    {
+      "name": "conv -> relu -> pool -> flatten",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [1, 28, 28] },
+        { "id": "c1", "type": "conv2d", "out_channels": 8, "kernel_size": 5, "padding": 2 },
+        { "id": "r1", "type": "relu" },
+        { "id": "p1", "type": "maxpool2d", "kernel_size": 2 },
+        { "id": "fl", "type": "flatten" },
+        { "id": "fc", "type": "linear", "out_features": 10 }
+      ],
+      "shapes": {
+        "in": [1, 28, 28],
+        "c1": [8, 28, 28],
+        "r1": [8, 28, 28],
+        "p1": [8, 14, 14],
+        "fl": [1568],
+        "fc": [10]
+      }
+    },
+    {
+      "name": "파라미터 생략 = pydantic 기본값 (conv k3 s1 p0, pool k2 stride=k)",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [1, 28, 28] },
+        { "id": "c1", "type": "conv2d", "out_channels": 4 },
+        { "id": "p1", "type": "maxpool2d" },
+        { "id": "fl", "type": "flatten" },
+        { "id": "fc", "type": "linear", "out_features": 10 }
+      ],
+      "shapes": { "c1": [4, 26, 26], "p1": [4, 13, 13], "fl": [676], "fc": [10] }
+    },
+    {
+      "name": "stride 내림 + 비정사각 입력 (h/w를 따로 계산하는가)",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [3, 32, 24] },
+        { "id": "c1", "type": "conv2d", "out_channels": 6, "kernel_size": 3, "stride": 2, "padding": 1 },
+        { "id": "p1", "type": "maxpool2d", "kernel_size": 3, "stride": 2 },
+        { "id": "fl", "type": "flatten" },
+        { "id": "fc", "type": "linear", "out_features": 5 }
+      ],
+      "shapes": { "c1": [6, 16, 12], "p1": [6, 7, 5], "fl": [210], "fc": [5] }
+    },
+    {
+      "name": "1D 입력은 flatten이 항등",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [784] },
+        { "id": "fl", "type": "flatten" },
+        { "id": "fc", "type": "linear", "out_features": 10 }
+      ],
+      "shapes": { "in": [784], "fl": [784], "fc": [10] }
+    },
+    {
+      "name": "커널이 입력보다 크다",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [1, 5, 5] },
+        { "id": "c1", "type": "conv2d", "out_channels": 2, "kernel_size": 7 }
+      ],
+      "error": "c1"
+    },
+    {
+      "name": "음수 나눗셈은 내림 (trunc로 계산하면 여기서 통과해버린다)",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [1, 3, 3] },
+        { "id": "p1", "type": "maxpool2d", "kernel_size": 4 }
+      ],
+      "error": "p1"
+    },
+    {
+      "name": "linear는 1D만 받는다",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [1, 28, 28] },
+        { "id": "fc", "type": "linear", "out_features": 10 }
+      ],
+      "error": "fc"
+    },
+    {
+      "name": "conv2d는 3D만 받는다",
+      "chain": [
+        { "id": "in", "type": "input", "shape": [784] },
+        { "id": "c1", "type": "conv2d", "out_channels": 4 }
+      ],
+      "error": "c1"
+    }
+  ]
+}
