@@ -5,6 +5,7 @@ import { produce } from "immer";
 import { applyCommand, CommandError, type Command, type GraphState } from "./commands.ts";
 import { loadGraph, toGraph, useGraphStore } from "./graphStore.ts";
 import { syncRFNodes } from "./rf.ts";
+import { autoLayout } from "./layout.ts";
 
 const node = (id: string, type: string, extra: object = {}) =>
   ({ id, type, ...extra }) as GraphState["nodes"][number];
@@ -103,7 +104,53 @@ assert.deepEqual(
 );
 assert.equal(toGraph().edges?.length, 5);
 assert.equal(toGraph().train?.batch_size, 64, "UI가 안 건드리는 train 설정도 그대로 나가야 한다");
-assert.deepEqual(JSON.parse(JSON.stringify(toGraph())), cnn, "열고 바로 저장하면 원본 그대로");
+assert.deepEqual(
+  JSON.parse(JSON.stringify(toGraph())),
+  cnn,
+  "열고 바로 저장하면 원본 그대로 (예제에 ui 좌표가 다 있어야 통과한다)",
+);
+
+// 캔버스에서 옮긴 좌표가 저장에 실리는가 — move_node -> 스토어 ui -> toGraph
+useGraphStore.getState().apply({ op: "move_node", id: "conv1", x: 42, y: 99 });
+assert.deepEqual(
+  toGraph().nodes.find((n) => n.id === "conv1")?.ui,
+  { x: 42, y: 99 },
+  "드래그한 자리가 저장 안 되면 파일 열 때마다 레이아웃이 날아간다",
+);
+temporal().undo();
+
+// ── 자동 배치: ui 없는 노드만, 위상 순서대로 ──
+const laidOut = autoLayout({
+  nodes: [
+    node("a", "relu"),
+    node("b", "relu", { ui: { x: 999, y: 999 } }),
+    node("c", "relu"),
+    node("d", "relu"),
+  ],
+  // a -> c -> d, b는 c와 같은 깊이에 걸어서 옆칸으로 밀리는지 본다
+  edges: [
+    { src: "a", dst: "c" },
+    { src: "c", dst: "d" },
+  ],
+});
+assert.deepEqual(
+  laidOut.map((n) => n.ui),
+  [
+    { x: 0, y: 0 },
+    { x: 999, y: 999 },
+    { x: 0, y: 130 },
+    { x: 0, y: 260 },
+  ],
+  "저장된 좌표는 그대로 두고 나머지만 깊이별로 놓는다",
+);
+// 뿌리가 둘이면 같은 깊이 = 가로로 나란히 (전부 한 점에 뭉치면 안 된다)
+assert.deepEqual(
+  autoLayout({ nodes: [node("x", "relu"), node("y", "relu")], edges: [] }).map((n) => n.ui),
+  [
+    { x: 0, y: 0 },
+    { x: 220, y: 0 },
+  ],
+);
 
 temporal().undo();
 assert.equal(useGraphStore.getState().nodes.length, 3, "로드도 undo 한 칸");

@@ -4,6 +4,7 @@ import { create } from "zustand";
 import { shallow } from "zustand/shallow";
 import { applyCommand, type Command, type GraphState } from "./commands.ts";
 import type { Graph } from "../types.gen.ts";
+import { autoLayout } from "./layout.ts";
 
 /**
  * 그래프 상태. undo 대상은 이 스토어뿐이다.
@@ -51,9 +52,11 @@ export const graphTemporal = useGraphStore.temporal.getState;
  */
 export function loadGraph(g: Graph): void {
   const { nodes, apply } = useGraphStore.getState();
+  // 좌표 없는 노드는 여기서 자리를 받는다. 안 하면 전부 (0,0)에 겹쳐서 뭉친다.
+  const placed = autoLayout({ nodes: g.nodes, edges: g.edges ?? [] });
   apply(
     { op: "delete", ids: nodes.map((n) => n.id) },
-    ...g.nodes.map((node): Command => ({ op: "add_node", node })),
+    ...placed.map((node): Command => ({ op: "add_node", node })),
     ...(g.edges ?? []).map(({ src, dst }): Command => ({ op: "connect", src, dst })),
   );
   useGraphStore.setState({ train: g.train });

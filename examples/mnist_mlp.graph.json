@@ -1,10 +1,10 @@
 {
   "nodes": [
-    { "id": "input", "type": "input", "shape": [1, 28, 28] },
-    { "id": "flatten", "type": "flatten" },
-    { "id": "fc1", "type": "linear", "out_features": 128 },
-    { "id": "relu1", "type": "relu" },
-    { "id": "fc2", "type": "linear", "out_features": 10 }
+    { "id": "input", "type": "input", "shape": [1, 28, 28], "ui": { "x": 0, "y": 0 } },
+    { "id": "flatten", "type": "flatten", "ui": { "x": 0, "y": 130 } },
+    { "id": "fc1", "type": "linear", "out_features": 128, "ui": { "x": 0, "y": 260 } },
+    { "id": "relu1", "type": "relu", "ui": { "x": 0, "y": 390 } },
+    { "id": "fc2", "type": "linear", "out_features": 10, "ui": { "x": 0, "y": 520 } }
   ],
   "edges": [
     { "src": "input", "dst": "flatten" },

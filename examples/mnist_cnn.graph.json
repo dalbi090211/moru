@@ -1,11 +1,11 @@
 {
   "nodes": [
-    { "id": "input", "type": "input", "shape": [1, 28, 28] },
-    { "id": "conv1", "type": "conv2d", "out_channels": 16, "kernel_size": 3, "padding": 1 },
-    { "id": "relu1", "type": "relu" },
-    { "id": "pool1", "type": "maxpool2d", "kernel_size": 2 },
-    { "id": "flatten", "type": "flatten" },
-    { "id": "fc1", "type": "linear", "out_features": 10 }
+    { "id": "input", "type": "input", "shape": [1, 28, 28], "ui": { "x": 0, "y": 0 } },
+    { "id": "conv1", "type": "conv2d", "out_channels": 16, "kernel_size": 3, "padding": 1, "ui": { "x": 0, "y": 130 } },
+    { "id": "relu1", "type": "relu", "ui": { "x": 0, "y": 260 } },
+    { "id": "pool1", "type": "maxpool2d", "kernel_size": 2, "ui": { "x": 0, "y": 390 } },
+    { "id": "flatten", "type": "flatten", "ui": { "x": 0, "y": 520 } },
+    { "id": "fc1", "type": "linear", "out_features": 10, "ui": { "x": 0, "y": 650 } }
   ],
   "edges": [
     { "src": "input", "dst": "conv1" },
