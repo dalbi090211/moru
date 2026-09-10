@@ -12,11 +12,21 @@ export interface Graph {
 }
 export interface InputNode {
   id: string;
+  ui?: NodeUI | null;
   type: "input";
   shape: number[];
 }
+/**
+ * 캔버스 위치. 백엔드는 읽지 않는다. 그래프 JSON이 곧 소스코드라
+ * 레이아웃도 같이 저장해야 파일을 다시 열었을 때 화면이 안 흩어진다.
+ */
+export interface NodeUI {
+  x: number;
+  y: number;
+}
 export interface Conv2DNode {
   id: string;
+  ui?: NodeUI | null;
   type: "conv2d";
   out_channels: number;
   kernel_size?: number;
@@ -25,21 +35,25 @@ export interface Conv2DNode {
 }
 export interface LinearNode {
   id: string;
+  ui?: NodeUI | null;
   type: "linear";
   out_features: number;
 }
 export interface ReLUNode {
   id: string;
+  ui?: NodeUI | null;
   type: "relu";
 }
 export interface MaxPool2DNode {
   id: string;
+  ui?: NodeUI | null;
   type: "maxpool2d";
   kernel_size?: number;
   stride?: number | null;
 }
 export interface FlattenNode {
   id: string;
+  ui?: NodeUI | null;
   type: "flatten";
 }
 export interface Edge {

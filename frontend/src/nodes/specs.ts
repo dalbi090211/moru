@@ -15,7 +15,7 @@ export type ParamSpec =
  * `-?`로 옵셔널을 벗겨서 기본값 있는 필드(kernel_size 등)도 spec을 강제한다.
  * pydantic 스키마가 바뀌면 gen:types 후 여기서 컴파일 에러가 난다.
  */
-type ParamsOf<N> = { [K in Exclude<keyof N, "id" | "type">]-?: ParamSpec };
+type ParamsOf<N> = { [K in Exclude<keyof N, "id" | "type" | "ui">]-?: ParamSpec };
 
 export type NodeSpec = {
   label: string;

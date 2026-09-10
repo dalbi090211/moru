@@ -7,13 +7,17 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
+    "check": "node --experimental-strip-types src/graph/commands.check.ts",
     "preview": "vite preview",
     "gen:types": "uv run --project ../backend python ../backend/gen_schema.py && json2ts -i .graph.schema.json -o src/types.gen.ts --no-additionalProperties"
   },
   "dependencies": {
     "@xyflow/react": "^12.11.6",
+    "immer": "^11.1.18",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "zundo": "^2.3.0",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

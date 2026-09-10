@@ -11,8 +11,17 @@ from pydantic import BaseModel, Field, model_validator
 # 모든 노드는 입력 0~1개, 출력 1개. 다입력(Add/Concat)이 생기면 그때 포트를 붙인다.
 
 
+class NodeUI(BaseModel):
+    """캔버스 위치. 백엔드는 읽지 않는다. 그래프 JSON이 곧 소스코드라
+    레이아웃도 같이 저장해야 파일을 다시 열었을 때 화면이 안 흩어진다."""
+
+    x: float
+    y: float
+
+
 class NodeBase(BaseModel):
     id: str
+    ui: NodeUI | None = None
 
 
 class InputNode(NodeBase):
