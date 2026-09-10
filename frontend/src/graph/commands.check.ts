@@ -1,8 +1,10 @@
 /** node --experimental-strip-types (npm run check). 프레임워크 없음. */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { produce } from "immer";
 import { applyCommand, CommandError, type Command, type GraphState } from "./commands.ts";
-import { useGraphStore } from "./graphStore.ts";
+import { loadGraph, toGraph, useGraphStore } from "./graphStore.ts";
+import { syncRFNodes } from "./rf.ts";
 
 const node = (id: string, type: string, extra: object = {}) =>
   ({ id, type, ...extra }) as GraphState["nodes"][number];
@@ -40,7 +42,7 @@ rejects("자기 자신", { op: "connect", src: "in", dst: "in" });
 rejects("이미 입력이 있다", { op: "add_node", node: FC }, { op: "connect", src: "fc", dst: "relu" });
 rejects("사이클", { op: "connect", src: "relu", dst: "in" });
 rejects("없는 파라미터", { op: "set_param", id: "relu", key: "out_features", value: 4 });
-rejects("모르는 노드 타입", { op: "add_node", node: node("c", "conv2d", { out_channels: 8 }) });
+rejects("모르는 노드 타입", { op: "add_node", node: node("bn", "batchnorm") }); // NODE_SPECS에 없다
 
 // insert_nodes: in -> relu 사이에 linear가 끼어든다
 const inserted = run(chain, { op: "insert_nodes", after: "in", nodes: [FC] });
@@ -89,5 +91,39 @@ temporal().undo();
 assert.deepEqual(useGraphStore.getState().nodes.map((n) => n.id), ["in"], "3개가 한 번에 사라져야 한다");
 temporal().redo();
 assert.equal(useGraphStore.getState().edges.length, 2);
+
+// ── 파일 로드/저장: 실제 예제 그래프가 UI 스토어에 들어가는가 ──
+const cnn = JSON.parse(
+  readFileSync(new URL("../../../examples/mnist_cnn.graph.json", import.meta.url), "utf8"),
+);
+loadGraph(cnn);
+assert.deepEqual(
+  toGraph().nodes.map((n) => n.id),
+  ["input", "conv1", "relu1", "pool1", "flatten", "fc1"],
+);
+assert.equal(toGraph().edges?.length, 5);
+assert.equal(toGraph().train?.batch_size, 64, "UI가 안 건드리는 train 설정도 그대로 나가야 한다");
+assert.deepEqual(JSON.parse(JSON.stringify(toGraph())), cnn, "열고 바로 저장하면 원본 그대로");
+
+temporal().undo();
+assert.equal(useGraphStore.getState().nodes.length, 3, "로드도 undo 한 칸");
+temporal().redo();
+
+// 실패한 로드는 스토어를 건드리지 않는다
+const before = useGraphStore.getState().nodes.length;
+assert.throws(() => loadGraph({ nodes: [node("bn", "batchnorm")] }), CommandError);
+assert.equal(useGraphStore.getState().nodes.length, before);
+
+// ── 변환 계층: RF가 붙여둔 실측값을 물려주는가 ──
+// 안 물려주면 RF가 노드를 visibility:hidden으로 그리고 다시 잰다 = 드래그 중 깜빡임.
+const IN2 = node("in", "input", { shape: [1, 28, 28], ui: { x: 5, y: 6 } });
+const measured = { width: 160, height: 44 };
+const live = syncRFNodes([], [IN]).map((n) => ({ ...n, measured, selected: true }));
+const [synced] = syncRFNodes(live, [IN2]);
+assert.deepEqual(synced.measured, measured, "실측값을 잃으면 노드가 숨는다");
+assert.equal(synced.selected, true, "선택 상태도 캔버스 쪽 것이다");
+assert.deepEqual(synced.position, { x: 5, y: 6 }, "위치는 스토어가 이긴다");
+assert.deepEqual(synced.data, { params: { shape: [1, 28, 28] } }, "파라미터만 감싼다 (ui/id/type 제외)");
+assert.deepEqual(syncRFNodes(live, []), [], "스토어에서 사라진 노드는 캔버스에서도 사라진다");
 
 console.log("commands.check.ts OK");

@@ -1,4 +1,11 @@
-import type { InputNode, LinearNode, ReLUNode } from "../types.gen";
+import type {
+  Conv2DNode,
+  FlattenNode,
+  InputNode,
+  LinearNode,
+  MaxPool2DNode,
+  ReLUNode,
+} from "../types.gen";
 
 /**
  * 노드 레지스트리. 여기 항목 하나 추가 = 새 노드 추가.
@@ -7,11 +14,12 @@ import type { InputNode, LinearNode, ReLUNode } from "../types.gen";
  */
 
 export type ParamSpec =
-  | { kind: "int"; label: string; default: number; min?: number }
+  /** default: null = 백엔드 기본값에 맡긴다 (maxpool stride = kernel_size). */
+  | { kind: "int"; label: string; default: number | null; min?: number }
   | { kind: "shape"; label: string; default: number[] };
 
 /**
- * 노드의 파라미터 = pydantic 필드에서 id/type을 뺀 것.
+ * 노드의 파라미터 = pydantic 필드에서 id/type/ui를 뺀 것.
  * `-?`로 옵셔널을 벗겨서 기본값 있는 필드(kernel_size 등)도 spec을 강제한다.
  * pydantic 스키마가 바뀌면 gen:types 후 여기서 컴파일 에러가 난다.
  */
@@ -35,6 +43,42 @@ export const NODE_SPECS = {
       shape: { kind: "shape", label: "shape", default: [1, 28, 28] },
     } satisfies ParamsOf<InputNode>,
   },
+  conv2d: {
+    label: "Conv2d",
+    accent: "bg-violet-600",
+    inputs: 1,
+    outputs: 1,
+    params: {
+      out_channels: { kind: "int", label: "out_channels", default: 16, min: 1 },
+      kernel_size: { kind: "int", label: "kernel_size", default: 3, min: 1 },
+      stride: { kind: "int", label: "stride", default: 1, min: 1 },
+      padding: { kind: "int", label: "padding", default: 0, min: 0 },
+    } satisfies ParamsOf<Conv2DNode>,
+  },
+  relu: {
+    label: "ReLU",
+    accent: "bg-zinc-600",
+    inputs: 1,
+    outputs: 1,
+    params: {} satisfies ParamsOf<ReLUNode>,
+  },
+  maxpool2d: {
+    label: "MaxPool2d",
+    accent: "bg-indigo-600",
+    inputs: 1,
+    outputs: 1,
+    params: {
+      kernel_size: { kind: "int", label: "kernel_size", default: 2, min: 1 },
+      stride: { kind: "int", label: "stride", default: null, min: 1 },
+    } satisfies ParamsOf<MaxPool2DNode>,
+  },
+  flatten: {
+    label: "Flatten",
+    accent: "bg-slate-600",
+    inputs: 1,
+    outputs: 1,
+    params: {} satisfies ParamsOf<FlattenNode>,
+  },
   linear: {
     label: "Linear",
     accent: "bg-sky-600",
@@ -43,13 +87,6 @@ export const NODE_SPECS = {
     params: {
       out_features: { kind: "int", label: "out_features", default: 128, min: 1 },
     } satisfies ParamsOf<LinearNode>,
-  },
-  relu: {
-    label: "ReLU",
-    accent: "bg-zinc-600",
-    inputs: 1,
-    outputs: 1,
-    params: {} satisfies ParamsOf<ReLUNode>,
   },
 } satisfies Record<string, NodeSpec>;
 
